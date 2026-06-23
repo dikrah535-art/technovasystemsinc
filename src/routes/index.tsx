@@ -985,18 +985,44 @@ function Careers({ onApply }: { onApply: (role?: string) => void }) {
           </div>
         </Reveal>
 
-        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">
-          {err && (
-            <p className="text-sm text-red-300">{err}</p>
+        <Reveal delay={0.05}>
+          <div className="mt-12 rounded-2xl glass p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_180px_180px]">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <input
+                  value={skill}
+                  onChange={(e) => setSkill(e.target.value)}
+                  placeholder="Search by skill, title, or department…"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-royal focus:ring-2 focus:ring-royal/30"
+                />
+              </label>
+              <FilterSelect value={roleType} onChange={setRoleType} options={roleTypes} label="Role type" />
+              <FilterSelect value={location} onChange={setLocation} options={locations} label="Location" />
+            </div>
+            <div className="mt-3 text-xs text-white/50">
+              Showing <span className="text-white/80">{filtered.length}</span>
+              {jobs ? <> of <span className="text-white/80">{jobs.length}</span></> : null} open roles
+              <span className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-royal/15 px-2 py-0.5 text-royal">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-royal" />
+                Live
+              </span>
+            </div>
+          </div>
+        </Reveal>
+
+        <div id="opportunities" className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {isError && (
+            <p className="text-sm text-red-300">We couldn't load open roles right now.</p>
           )}
-          {jobs === null && !err &&
+          {isLoading &&
             [0, 1, 2, 3].map((i) => (
               <div key={i} className="h-44 animate-pulse rounded-2xl glass" />
             ))}
-          {jobs?.length === 0 && (
-            <p className="text-white/60">No open roles right now — but we'd still love your resume.</p>
+          {!isLoading && filtered.length === 0 && !isError && (
+            <p className="text-white/60">No roles match those filters — try widening your search.</p>
           )}
-          {jobs?.map((job, i) => (
+          {filtered.map((job, i) => (
             <Reveal key={job.id} delay={i * 0.05}>
               <motion.div
                 whileHover={{ y: -3 }}
