@@ -375,10 +375,10 @@ function Hero() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium tracking-wide text-white/80">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium tracking-wide text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              The Future Isn't Written. We Engineer It.
-            </span>
+              <Typewriter phrases={heroPhrases} />
+            </div>
           </Reveal>
           <Reveal delay={0.1}>
             <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
