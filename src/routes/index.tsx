@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import {
@@ -19,6 +19,10 @@ import {
   Mail,
   Phone,
   MapPin,
+  Upload,
+  MapPin as MapPinIcon,
+  Building2,
+  Clock,
 } from "lucide-react";
 import { TechNovaLogo } from "@/components/TechNovaLogo";
 import { ParticleField } from "@/components/ParticleField";
