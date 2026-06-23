@@ -1312,3 +1312,162 @@ function ModalField({
     </label>
   );
 }
+
+/* ---------- Typewriter ---------- */
+function Typewriter({ phrases }: { phrases: string[] }) {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [text, setText] = useState("");
+  const [phase, setPhase] = useState<"typing" | "holding" | "deleting">("typing");
+
+  useEffect(() => {
+    const current = phrases[phraseIndex];
+    let timer: ReturnType<typeof setTimeout>;
+    if (phase === "typing") {
+      if (text.length < current.length) {
+        timer = setTimeout(() => setText(current.slice(0, text.length + 1)), 55);
+      } else {
+        timer = setTimeout(() => setPhase("holding"), 1400);
+      }
+    } else if (phase === "holding") {
+      timer = setTimeout(() => setPhase("deleting"), 200);
+    } else {
+      if (text.length > 0) {
+        timer = setTimeout(() => setText(current.slice(0, text.length - 1)), 28);
+      } else {
+        setPhraseIndex((i) => (i + 1) % phrases.length);
+        setPhase("typing");
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [text, phase, phraseIndex, phrases]);
+
+  return (
+    <span className="inline-flex items-center font-medium text-white/90" aria-live="polite">
+      <span>{text || "\u00A0"}</span>
+      <motion.span
+        aria-hidden
+        animate={{ opacity: [1, 0, 1] }}
+        transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+        className="ml-0.5 inline-block h-3.5 w-[2px] bg-gold align-middle"
+      />
+    </span>
+  );
+}
+
+/* ---------- Core Services strip ---------- */
+function CoreServices() {
+  return (
+    <section id="services" className="relative bg-navy-deep py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal>
+          <div className="max-w-2xl">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+              Core Services
+            </div>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Specialized talent across the modern stack.
+            </h2>
+            <p className="mt-4 text-lg text-white/70">
+              Six practice areas. Deep benches. Engineers who've shipped what your roadmap needs next.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {coreServices.map((s, i) => (
+            <Reveal key={s.title} delay={i * 0.05}>
+              <motion.div
+                whileHover={{ y: -4 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="group h-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition hover:border-white/25 hover:shadow-glow"
+              >
+                <div className="grid h-12 w-12 place-items-center rounded-xl bg-royal/15 text-royal ring-1 ring-royal/30 transition group-hover:bg-gold/15 group-hover:text-gold group-hover:ring-gold/30">
+                  <s.icon className="h-6 w-6" />
+                </div>
+                <h3 className="mt-5 text-lg font-semibold text-white">{s.title}</h3>
+                <p className="mt-2 text-sm text-white/65">{s.body}</p>
+              </motion.div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Testimonials grid ---------- */
+function Testimonials() {
+  return (
+    <section id="testimonials" className="relative bg-navy-deep py-24 sm:py-32">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal>
+          <div className="max-w-2xl">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+              Voices
+            </div>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Trusted by teams who ship.
+            </h2>
+          </div>
+        </Reveal>
+
+        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {testimonials.map((t, i) => (
+            <Reveal key={t.name} delay={i * 0.06}>
+              <motion.figure
+                whileHover={{ y: -3 }}
+                className="relative h-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-7 shadow-[0_20px_60px_-30px_rgba(37,99,235,0.4)]"
+              >
+                <Quote className="absolute right-6 top-6 h-8 w-8 text-royal/30" />
+                <div className="flex items-center gap-1 text-gold">
+                  {Array.from({ length: t.rating }).map((_, idx) => (
+                    <Star key={idx} className="h-4 w-4 fill-current" />
+                  ))}
+                </div>
+                <blockquote className="mt-5 text-base leading-relaxed text-white/85">
+                  "{t.quote}"
+                </blockquote>
+                <figcaption className="mt-6 border-t border-white/10 pt-4">
+                  <div className="text-sm font-semibold text-white">{t.name}</div>
+                  <div className="text-xs text-white/55">{t.role}</div>
+                </figcaption>
+              </motion.figure>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Filter Select (Careers) ---------- */
+function FilterSelect({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  label: string;
+}) {
+  return (
+    <label className="relative block">
+      <span className="sr-only">{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-royal focus:ring-2 focus:ring-royal/30"
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt} className="bg-navy text-white">
+            {opt === "All" ? `${label}: All` : opt}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
