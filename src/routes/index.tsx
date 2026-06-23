@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   Target,
@@ -23,6 +24,15 @@ import {
   MapPin as MapPinIcon,
   Building2,
   Clock,
+  Cloud,
+  Database,
+  Lock,
+  Cpu,
+  Code2,
+  GitBranch,
+  Search,
+  Star,
+  Quote,
 } from "lucide-react";
 import { TechNovaLogo } from "@/components/TechNovaLogo";
 import { ParticleField } from "@/components/ParticleField";
@@ -50,6 +60,8 @@ export const Route = createFileRoute("/")({
 
 const navLinks = [
   { label: "Solutions", href: "#solutions" },
+  { label: "Services", href: "#services" },
+  { label: "Voices", href: "#testimonials" },
   { label: "About", href: "#about" },
   { label: "Careers", href: "#careers" },
   { label: "Contact", href: "#contact" },
@@ -60,6 +72,47 @@ const attributes = [
   { icon: TrendingUp, title: "Scalable", body: "Built today for tomorrow." },
   { icon: ShieldCheck, title: "Reliable", body: "Engineering you can trust." },
   { icon: Users, title: "Impactful", body: "Real results. Real impact." },
+];
+
+const coreServices = [
+  { icon: Cloud, title: "Cloud & Platform", body: "AWS, GCP and Azure architects who ship production-grade systems." },
+  { icon: Database, title: "Data & Analytics", body: "Modern data stacks, lakehouses, and ML pipelines that compound." },
+  { icon: Lock, title: "Security & Compliance", body: "From SOC 2 to zero-trust — security engineering, not theater." },
+  { icon: Cpu, title: "AI & Machine Learning", body: "Applied ML, MLOps, and LLM platforms wired into your product." },
+  { icon: Code2, title: "Product Engineering", body: "Full-stack squads that own outcomes — not just tickets." },
+  { icon: GitBranch, title: "DevOps & SRE", body: "CI/CD, observability, and reliability for teams that ship daily." },
+];
+
+const testimonials = [
+  {
+    quote: "TechNova rebuilt our talent pipeline in 30 days. We cut time-to-hire in half and onboarded eight senior engineers before our roadmap slipped.",
+    name: "Priya Natarajan",
+    role: "VP Engineering, Lumen Health",
+    rating: 5,
+  },
+  {
+    quote: "The executive search was meticulous. Our new CTO was sourced confidentially and integrated in under 90 days — exactly as promised.",
+    name: "Marcus Webb",
+    role: "CEO, Northwind Robotics",
+    rating: 5,
+  },
+  {
+    quote: "They embed like a true engineering partner. Their RPO pod is indistinguishable from our internal team — only faster.",
+    name: "Aisha Okonkwo",
+    role: "Chief People Officer, Aperture AI",
+    rating: 5,
+  },
+  {
+    quote: "Vetted contractors landed in our standups within the week. The bar is genuinely high, and the bench is deep.",
+    name: "Daniel Park",
+    role: "Director of Platform, Skyloop",
+    rating: 5,
+  },
+];
+
+const heroPhrases = [
+  "The Future Isn't Written.",
+  "We Engineer It.",
 ];
 
 type Service = {
@@ -177,8 +230,10 @@ function Index() {
       <main>
         <Hero />
         <Attributes />
+        <CoreServices />
         <Solutions onOpen={setActiveService} />
         <About />
+        <Testimonials />
         <Careers onApply={(role) => setResumeOpen({ role })} />
         <Contact />
       </main>
@@ -320,10 +375,10 @@ function Hero() {
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl">
           <Reveal>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium tracking-wide text-white/80">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium tracking-wide text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              The Future Isn't Written. We Engineer It.
-            </span>
+              <Typewriter phrases={heroPhrases} />
+            </div>
           </Reveal>
           <Reveal delay={0.1}>
             <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
@@ -595,8 +650,17 @@ function Contact() {
   const [values, setValues] = useState({ name: "", email: "", company: "", message: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: async (payload: { full_name: string; email: string; message: string }) => {
+      const { error } = await supabase.from("contacts").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+    },
+  });
 
   function validateField(field: keyof typeof values, val: string) {
     const partial = { ...values, [field]: val };
@@ -620,22 +684,19 @@ function Contact() {
       setErrors(errs);
       return;
     }
-    setSubmitting(true);
-    setSubmitError(null);
-    const { error } = await supabase.from("contacts").insert({
+    mutation.mutate({
       full_name: result.data.name,
       email: result.data.email,
       message: result.data.company
         ? `[Company: ${result.data.company}]\n\n${result.data.message}`
         : result.data.message,
     });
-    setSubmitting(false);
-    if (error) {
-      setSubmitError("Something went wrong sending your message. Please try again.");
-      return;
-    }
-    setSubmitted(true);
   }
+
+  const submitting = mutation.isPending;
+  const submitError = mutation.isError
+    ? "Something went wrong sending your message. Please try again."
+    : null;
 
   return (
     <section id="contact" className="relative overflow-hidden bg-navy-deep py-24 sm:py-32">
@@ -845,26 +906,64 @@ type JobPosting = {
   description: string;
 };
 
-function Careers({ onApply }: { onApply: (role?: string) => void }) {
-  const [jobs, setJobs] = useState<JobPosting[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+function useJobPostingsQuery() {
+  const qc = useQueryClient();
 
   useEffect(() => {
-    let mounted = true;
-    supabase
-      .from("job_postings")
-      .select("id,title,department,location,employment_type,description")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (!mounted) return;
-        if (error) setErr("We couldn't load open roles right now.");
-        else setJobs(data ?? []);
-      });
+    const channel = supabase
+      .channel("job_postings_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "job_postings" },
+        () => qc.invalidateQueries({ queryKey: ["job_postings"] }),
+      )
+      .subscribe();
     return () => {
-      mounted = false;
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [qc]);
+
+  return useQuery<JobPosting[]>({
+    queryKey: ["job_postings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("job_postings")
+        .select("id,title,department,location,employment_type,description")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as JobPosting[];
+    },
+  });
+}
+
+function Careers({ onApply }: { onApply: (role?: string) => void }) {
+  const { data: jobs, isLoading, isError } = useJobPostingsQuery();
+  const [roleType, setRoleType] = useState<string>("All");
+  const [location, setLocation] = useState<string>("All");
+  const [skill, setSkill] = useState<string>("");
+
+  const roleTypes = useMemo(
+    () => ["All", ...Array.from(new Set((jobs ?? []).map((j) => j.employment_type)))],
+    [jobs],
+  );
+  const locations = useMemo(
+    () => ["All", ...Array.from(new Set((jobs ?? []).map((j) => j.location)))],
+    [jobs],
+  );
+
+  const filtered = useMemo(() => {
+    return (jobs ?? []).filter((j) => {
+      if (roleType !== "All" && j.employment_type !== roleType) return false;
+      if (location !== "All" && j.location !== location) return false;
+      if (skill.trim()) {
+        const q = skill.trim().toLowerCase();
+        const blob = `${j.title} ${j.description} ${j.department}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [jobs, roleType, location, skill]);
 
   return (
     <section id="careers" className="relative bg-navy py-24 sm:py-32">
@@ -892,18 +991,44 @@ function Careers({ onApply }: { onApply: (role?: string) => void }) {
           </div>
         </Reveal>
 
-        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">
-          {err && (
-            <p className="text-sm text-red-300">{err}</p>
+        <Reveal delay={0.05}>
+          <div className="mt-12 rounded-2xl glass p-4 sm:p-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_180px_180px]">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <input
+                  value={skill}
+                  onChange={(e) => setSkill(e.target.value)}
+                  placeholder="Search by skill, title, or department…"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-9 pr-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-royal focus:ring-2 focus:ring-royal/30"
+                />
+              </label>
+              <FilterSelect value={roleType} onChange={setRoleType} options={roleTypes} label="Role type" />
+              <FilterSelect value={location} onChange={setLocation} options={locations} label="Location" />
+            </div>
+            <div className="mt-3 text-xs text-white/50">
+              Showing <span className="text-white/80">{filtered.length}</span>
+              {jobs ? <> of <span className="text-white/80">{jobs.length}</span></> : null} open roles
+              <span className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-royal/15 px-2 py-0.5 text-royal">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-royal" />
+                Live
+              </span>
+            </div>
+          </div>
+        </Reveal>
+
+        <div id="opportunities" className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {isError && (
+            <p className="text-sm text-red-300">We couldn't load open roles right now.</p>
           )}
-          {jobs === null && !err &&
+          {isLoading &&
             [0, 1, 2, 3].map((i) => (
               <div key={i} className="h-44 animate-pulse rounded-2xl glass" />
             ))}
-          {jobs?.length === 0 && (
-            <p className="text-white/60">No open roles right now — but we'd still love your resume.</p>
+          {!isLoading && filtered.length === 0 && !isError && (
+            <p className="text-white/60">No roles match those filters — try widening your search.</p>
           )}
-          {jobs?.map((job, i) => (
+          {filtered.map((job, i) => (
             <Reveal key={job.id} delay={i * 0.05}>
               <motion.div
                 whileHover={{ y: -3 }}
@@ -973,10 +1098,45 @@ function ResumeModal({
   });
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (input: {
+      data: z.infer<typeof applicationSchema>;
+      file: File;
+    }) => {
+      const ext = input.file.name.includes(".")
+        ? input.file.name.split(".").pop()
+        : "bin";
+      const safeName = input.data.full_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      const path = `${Date.now()}-${safeName}-${crypto.randomUUID()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("resumes")
+        .upload(path, input.file, { contentType: input.file.type, upsert: false });
+      if (uploadErr) throw new Error("upload");
+      const { data: publicUrlData } = supabase.storage.from("resumes").getPublicUrl(path);
+      const { error: insertErr } = await supabase.from("job_applications").insert({
+        ...input.data,
+        resume_url: publicUrlData.publicUrl,
+      });
+      if (insertErr) throw new Error("insert");
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      qc.invalidateQueries({ queryKey: ["job_applications"] });
+    },
+    onError: (err: Error) => {
+      setSubmitError(
+        err.message === "insert"
+          ? "Your resume uploaded, but we couldn't save your application. Please contact us."
+          : "We couldn't upload your resume. Please try again.",
+      );
+    },
+  });
+  const submitting = mutation.isPending;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -1005,33 +1165,7 @@ function ResumeModal({
     if (fileErr) newErrs.file = fileErr;
     setErrors(newErrs);
     if (Object.keys(newErrs).length > 0 || !parsed.success || !file) return;
-
-    setSubmitting(true);
-    const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-    const safeName = parsed.data.full_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-    const path = `${Date.now()}-${safeName}-${crypto.randomUUID()}.${ext}`;
-
-    const { error: uploadErr } = await supabase.storage
-      .from("resumes")
-      .upload(path, file, { contentType: file.type, upsert: false });
-    if (uploadErr) {
-      setSubmitting(false);
-      setSubmitError("We couldn't upload your resume. Please try again.");
-      return;
-    }
-
-    const { data: publicUrlData } = supabase.storage.from("resumes").getPublicUrl(path);
-
-    const { error: insertErr } = await supabase.from("job_applications").insert({
-      ...parsed.data,
-      resume_url: publicUrlData.publicUrl,
-    });
-    setSubmitting(false);
-    if (insertErr) {
-      setSubmitError("Your resume uploaded, but we couldn't save your application. Please contact us.");
-      return;
-    }
-    setSubmitted(true);
+    mutation.mutate({ data: parsed.data, file });
   }
 
   return (
@@ -1190,6 +1324,165 @@ function ModalField({
         }`}
       />
       {error && <span className="mt-1.5 block text-xs text-red-300">{error}</span>}
+    </label>
+  );
+}
+
+/* ---------- Typewriter ---------- */
+function Typewriter({ phrases }: { phrases: string[] }) {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [text, setText] = useState("");
+  const [phase, setPhase] = useState<"typing" | "holding" | "deleting">("typing");
+
+  useEffect(() => {
+    const current = phrases[phraseIndex];
+    let timer: ReturnType<typeof setTimeout>;
+    if (phase === "typing") {
+      if (text.length < current.length) {
+        timer = setTimeout(() => setText(current.slice(0, text.length + 1)), 55);
+      } else {
+        timer = setTimeout(() => setPhase("holding"), 1400);
+      }
+    } else if (phase === "holding") {
+      timer = setTimeout(() => setPhase("deleting"), 200);
+    } else {
+      if (text.length > 0) {
+        timer = setTimeout(() => setText(current.slice(0, text.length - 1)), 28);
+      } else {
+        setPhraseIndex((i) => (i + 1) % phrases.length);
+        setPhase("typing");
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [text, phase, phraseIndex, phrases]);
+
+  return (
+    <span className="inline-flex items-center font-medium text-white/90" aria-live="polite">
+      <span>{text || "\u00A0"}</span>
+      <motion.span
+        aria-hidden
+        animate={{ opacity: [1, 0, 1] }}
+        transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+        className="ml-0.5 inline-block h-3.5 w-[2px] bg-gold align-middle"
+      />
+    </span>
+  );
+}
+
+/* ---------- Core Services strip ---------- */
+function CoreServices() {
+  return (
+    <section id="services" className="relative bg-navy-deep py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal>
+          <div className="max-w-2xl">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+              Core Services
+            </div>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Specialized talent across the modern stack.
+            </h2>
+            <p className="mt-4 text-lg text-white/70">
+              Six practice areas. Deep benches. Engineers who've shipped what your roadmap needs next.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {coreServices.map((s, i) => (
+            <Reveal key={s.title} delay={i * 0.05}>
+              <motion.div
+                whileHover={{ y: -4 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="group h-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition hover:border-white/25 hover:shadow-glow"
+              >
+                <div className="grid h-12 w-12 place-items-center rounded-xl bg-royal/15 text-royal ring-1 ring-royal/30 transition group-hover:bg-gold/15 group-hover:text-gold group-hover:ring-gold/30">
+                  <s.icon className="h-6 w-6" />
+                </div>
+                <h3 className="mt-5 text-lg font-semibold text-white">{s.title}</h3>
+                <p className="mt-2 text-sm text-white/65">{s.body}</p>
+              </motion.div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Testimonials grid ---------- */
+function Testimonials() {
+  return (
+    <section id="testimonials" className="relative bg-navy-deep py-24 sm:py-32">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal>
+          <div className="max-w-2xl">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+              Voices
+            </div>
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+              Trusted by teams who ship.
+            </h2>
+          </div>
+        </Reveal>
+
+        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {testimonials.map((t, i) => (
+            <Reveal key={t.name} delay={i * 0.06}>
+              <motion.figure
+                whileHover={{ y: -3 }}
+                className="relative h-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-7 shadow-[0_20px_60px_-30px_rgba(37,99,235,0.4)]"
+              >
+                <Quote className="absolute right-6 top-6 h-8 w-8 text-royal/30" />
+                <div className="flex items-center gap-1 text-gold">
+                  {Array.from({ length: t.rating }).map((_, idx) => (
+                    <Star key={idx} className="h-4 w-4 fill-current" />
+                  ))}
+                </div>
+                <blockquote className="mt-5 text-base leading-relaxed text-white/85">
+                  "{t.quote}"
+                </blockquote>
+                <figcaption className="mt-6 border-t border-white/10 pt-4">
+                  <div className="text-sm font-semibold text-white">{t.name}</div>
+                  <div className="text-xs text-white/55">{t.role}</div>
+                </figcaption>
+              </motion.figure>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Filter Select (Careers) ---------- */
+function FilterSelect({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  label: string;
+}) {
+  return (
+    <label className="relative block">
+      <span className="sr-only">{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white outline-none transition focus:border-royal focus:ring-2 focus:ring-royal/30"
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt} className="bg-navy text-white">
+            {opt === "All" ? `${label}: All` : opt}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }
