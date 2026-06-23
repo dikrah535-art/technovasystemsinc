@@ -60,6 +60,8 @@ export const Route = createFileRoute("/")({
 
 const navLinks = [
   { label: "Solutions", href: "#solutions" },
+  { label: "Services", href: "#services" },
+  { label: "Voices", href: "#testimonials" },
   { label: "About", href: "#about" },
   { label: "Careers", href: "#careers" },
   { label: "Contact", href: "#contact" },
@@ -70,6 +72,47 @@ const attributes = [
   { icon: TrendingUp, title: "Scalable", body: "Built today for tomorrow." },
   { icon: ShieldCheck, title: "Reliable", body: "Engineering you can trust." },
   { icon: Users, title: "Impactful", body: "Real results. Real impact." },
+];
+
+const coreServices = [
+  { icon: Cloud, title: "Cloud & Platform", body: "AWS, GCP and Azure architects who ship production-grade systems." },
+  { icon: Database, title: "Data & Analytics", body: "Modern data stacks, lakehouses, and ML pipelines that compound." },
+  { icon: Lock, title: "Security & Compliance", body: "From SOC 2 to zero-trust — security engineering, not theater." },
+  { icon: Cpu, title: "AI & Machine Learning", body: "Applied ML, MLOps, and LLM platforms wired into your product." },
+  { icon: Code2, title: "Product Engineering", body: "Full-stack squads that own outcomes — not just tickets." },
+  { icon: GitBranch, title: "DevOps & SRE", body: "CI/CD, observability, and reliability for teams that ship daily." },
+];
+
+const testimonials = [
+  {
+    quote: "TechNova rebuilt our talent pipeline in 30 days. We cut time-to-hire in half and onboarded eight senior engineers before our roadmap slipped.",
+    name: "Priya Natarajan",
+    role: "VP Engineering, Lumen Health",
+    rating: 5,
+  },
+  {
+    quote: "The executive search was meticulous. Our new CTO was sourced confidentially and integrated in under 90 days — exactly as promised.",
+    name: "Marcus Webb",
+    role: "CEO, Northwind Robotics",
+    rating: 5,
+  },
+  {
+    quote: "They embed like a true engineering partner. Their RPO pod is indistinguishable from our internal team — only faster.",
+    name: "Aisha Okonkwo",
+    role: "Chief People Officer, Aperture AI",
+    rating: 5,
+  },
+  {
+    quote: "Vetted contractors landed in our standups within the week. The bar is genuinely high, and the bench is deep.",
+    name: "Daniel Park",
+    role: "Director of Platform, Skyloop",
+    rating: 5,
+  },
+];
+
+const heroPhrases = [
+  "The Future Isn't Written.",
+  "We Engineer It.",
 ];
 
 type Service = {
