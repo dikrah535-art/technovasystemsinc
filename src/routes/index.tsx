@@ -152,6 +152,7 @@ function Index() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeService, setActiveService] = useState<Service | null>(null);
+  const [resumeOpen, setResumeOpen] = useState<{ role?: string } | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -161,11 +162,11 @@ function Index() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = activeService ? "hidden" : "";
+    document.body.style.overflow = activeService || resumeOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [activeService]);
+  }, [activeService, resumeOpen]);
 
   return (
     <div className="min-h-screen bg-navy text-foreground">
@@ -179,6 +180,7 @@ function Index() {
         <Attributes />
         <Solutions onOpen={setActiveService} />
         <About />
+        <Careers onApply={(role) => setResumeOpen({ role })} />
         <Contact />
       </main>
       <Footer />
@@ -186,6 +188,14 @@ function Index() {
       <AnimatePresence>
         {activeService && (
           <ServiceDetail service={activeService} onClose={() => setActiveService(null)} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {resumeOpen && (
+          <ResumeModal
+            defaultRole={resumeOpen.role}
+            onClose={() => setResumeOpen(null)}
+          />
         )}
       </AnimatePresence>
     </div>
