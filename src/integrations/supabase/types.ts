@@ -38,6 +38,80 @@ export type Database = {
         }
         Relationships: []
       }
+      job_applications: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          job_posting_id: string | null
+          phone: string
+          resume_url: string
+          role_applied_for: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          job_posting_id?: string | null
+          phone: string
+          resume_url: string
+          role_applied_for: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          job_posting_id?: string | null
+          phone?: string
+          resume_url?: string
+          role_applied_for?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_postings: {
+        Row: {
+          created_at: string
+          department: string
+          description: string
+          employment_type: string
+          id: string
+          is_active: boolean
+          location: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          description: string
+          employment_type: string
+          id?: string
+          is_active?: boolean
+          location: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          description?: string
+          employment_type?: string
+          id?: string
+          is_active?: boolean
+          location?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

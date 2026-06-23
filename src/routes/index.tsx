@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import {
@@ -19,6 +19,10 @@ import {
   Mail,
   Phone,
   MapPin,
+  Upload,
+  MapPin as MapPinIcon,
+  Building2,
+  Clock,
 } from "lucide-react";
 import { TechNovaLogo } from "@/components/TechNovaLogo";
 import { ParticleField } from "@/components/ParticleField";
@@ -47,7 +51,6 @@ export const Route = createFileRoute("/")({
 const navLinks = [
   { label: "Solutions", href: "#solutions" },
   { label: "About", href: "#about" },
-  { label: "Insights", href: "#insights" },
   { label: "Careers", href: "#careers" },
   { label: "Contact", href: "#contact" },
 ];
@@ -148,6 +151,7 @@ function Index() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeService, setActiveService] = useState<Service | null>(null);
+  const [resumeOpen, setResumeOpen] = useState<{ role?: string } | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -157,11 +161,11 @@ function Index() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = activeService ? "hidden" : "";
+    document.body.style.overflow = activeService || resumeOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [activeService]);
+  }, [activeService, resumeOpen]);
 
   return (
     <div className="min-h-screen bg-navy text-foreground">
@@ -175,6 +179,7 @@ function Index() {
         <Attributes />
         <Solutions onOpen={setActiveService} />
         <About />
+        <Careers onApply={(role) => setResumeOpen({ role })} />
         <Contact />
       </main>
       <Footer />
@@ -182,6 +187,14 @@ function Index() {
       <AnimatePresence>
         {activeService && (
           <ServiceDetail service={activeService} onClose={() => setActiveService(null)} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {resumeOpen && (
+          <ResumeModal
+            defaultRole={resumeOpen.role}
+            onClose={() => setResumeOpen(null)}
+          />
         )}
       </AnimatePresence>
     </div>
@@ -811,7 +824,7 @@ function Field({
 /* ---------- Footer ---------- */
 function Footer() {
   return (
-    <footer id="careers" className="border-t border-white/10 bg-navy py-12">
+    <footer className="border-t border-white/10 bg-navy py-12">
       <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-4 sm:flex-row sm:items-center sm:px-6 lg:px-8">
         <TechNovaLogo />
         <p className="text-xs text-white/50">
@@ -819,5 +832,364 @@ function Footer() {
         </p>
       </div>
     </footer>
+  );
+}
+
+/* ---------- Careers ---------- */
+type JobPosting = {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  employment_type: string;
+  description: string;
+};
+
+function Careers({ onApply }: { onApply: (role?: string) => void }) {
+  const [jobs, setJobs] = useState<JobPosting[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase
+      .from("job_postings")
+      .select("id,title,department,location,employment_type,description")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) setErr("We couldn't load open roles right now.");
+        else setJobs(data ?? []);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <section id="careers" className="relative bg-navy py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal>
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-2xl">
+              <div className="text-sm font-semibold uppercase tracking-[0.2em] text-royal">
+                Careers
+              </div>
+              <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                Browse open roles.
+              </h2>
+              <p className="mt-4 text-lg text-white/70">
+                Engineer the future with us. Don't see a fit? Send your resume — we keep a warm bench.
+              </p>
+            </div>
+            <button
+              onClick={() => onApply()}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-gold transition hover:scale-[1.03]"
+            >
+              <Upload className="h-4 w-4" />
+              Submit Your Resume
+            </button>
+          </div>
+        </Reveal>
+
+        <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {err && (
+            <p className="text-sm text-red-300">{err}</p>
+          )}
+          {jobs === null && !err &&
+            [0, 1, 2, 3].map((i) => (
+              <div key={i} className="h-44 animate-pulse rounded-2xl glass" />
+            ))}
+          {jobs?.length === 0 && (
+            <p className="text-white/60">No open roles right now — but we'd still love your resume.</p>
+          )}
+          {jobs?.map((job, i) => (
+            <Reveal key={job.id} delay={i * 0.05}>
+              <motion.div
+                whileHover={{ y: -3 }}
+                className="flex h-full flex-col justify-between rounded-2xl glass p-6"
+              >
+                <div>
+                  <h3 className="text-xl font-semibold text-white">{job.title}</h3>
+                  <p className="mt-3 text-sm text-white/65">{job.description}</p>
+                  <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/55">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Building2 className="h-3.5 w-3.5 text-gold" />
+                      {job.department}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPinIcon className="h-3.5 w-3.5 text-gold" />
+                      {job.location}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-gold" />
+                      {job.employment_type}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => onApply(job.title)}
+                  className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-gold transition hover:translate-x-0.5"
+                >
+                  Apply Now
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </motion.div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Resume Modal ---------- */
+const applicationSchema = z.object({
+  full_name: z.string().trim().min(2, "Please enter your name").max(120),
+  email: z.string().trim().email("Enter a valid email").max(160),
+  phone: z.string().trim().min(6, "Enter a valid phone").max(40),
+  role_applied_for: z.string().trim().min(2, "Please enter a role").max(160),
+});
+
+const ALLOWED_RESUME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const MAX_RESUME_BYTES = 5 * 1024 * 1024;
+
+function ResumeModal({
+  defaultRole,
+  onClose,
+}: {
+  defaultRole?: string;
+  onClose: () => void;
+}) {
+  const [values, setValues] = useState({
+    full_name: "",
+    email: "",
+    phone: "",
+    role_applied_for: defaultRole ?? "",
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function validateFile(f: File | null): string | null {
+    if (!f) return "Please attach your resume (PDF or DOCX).";
+    if (!ALLOWED_RESUME_TYPES.includes(f.type)) return "Resume must be a PDF or DOCX file.";
+    if (f.size > MAX_RESUME_BYTES) return "Resume must be 5MB or smaller.";
+    return null;
+  }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitError(null);
+    const parsed = applicationSchema.safeParse(values);
+    const fileErr = validateFile(file);
+    const newErrs: Record<string, string> = {};
+    if (!parsed.success) {
+      parsed.error.issues.forEach((i) => {
+        newErrs[String(i.path[0])] = i.message;
+      });
+    }
+    if (fileErr) newErrs.file = fileErr;
+    setErrors(newErrs);
+    if (Object.keys(newErrs).length > 0 || !parsed.success || !file) return;
+
+    setSubmitting(true);
+    const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+    const safeName = parsed.data.full_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    const path = `${Date.now()}-${safeName}-${crypto.randomUUID()}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage
+      .from("resumes")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (uploadErr) {
+      setSubmitting(false);
+      setSubmitError("We couldn't upload your resume. Please try again.");
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("resumes").getPublicUrl(path);
+
+    const { error: insertErr } = await supabase.from("job_applications").insert({
+      ...parsed.data,
+      resume_url: publicUrlData.publicUrl,
+    });
+    setSubmitting(false);
+    if (insertErr) {
+      setSubmitError("Your resume uploaded, but we couldn't save your application. Please contact us.");
+      return;
+    }
+    setSubmitted(true);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 260, damping: 28 }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 bg-navy p-6 sm:p-8 max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 transition hover:text-white"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
+          </button>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-md p-1.5 text-white/60 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {submitted ? (
+          <div className="py-8">
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-gold/20 text-gold">
+              <Check className="h-6 w-6" />
+            </div>
+            <h3 className="mt-5 text-2xl font-semibold text-white">Application submitted.</h3>
+            <p className="mt-2 text-white/70">
+              Thanks — our talent team will review your resume and reach out if there's a match.
+            </p>
+            <button
+              onClick={onClose}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-gold"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={onSubmit} noValidate className="mt-4 space-y-4">
+            <h3 className="text-2xl font-semibold text-white">Submit Your Resume</h3>
+            <p className="text-sm text-white/65">
+              Share your details and we'll be in touch about matching roles.
+            </p>
+
+            <ModalField
+              label="Full name"
+              value={values.full_name}
+              onChange={(v) => setValues((s) => ({ ...s, full_name: v }))}
+              error={errors.full_name}
+            />
+            <ModalField
+              label="Email"
+              type="email"
+              value={values.email}
+              onChange={(v) => setValues((s) => ({ ...s, email: v }))}
+              error={errors.email}
+            />
+            <ModalField
+              label="Phone"
+              type="tel"
+              value={values.phone}
+              onChange={(v) => setValues((s) => ({ ...s, phone: v }))}
+              error={errors.phone}
+            />
+            <ModalField
+              label="Role you're applying for"
+              value={values.role_applied_for}
+              onChange={(v) => setValues((s) => ({ ...s, role_applied_for: v }))}
+              error={errors.role_applied_for}
+            />
+
+            <div>
+              <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/60">
+                Resume (PDF or DOCX, max 5MB)
+              </span>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-white/20 bg-white/[0.04] px-4 py-3 text-left text-sm text-white/75 hover:border-white/40"
+              >
+                <span className="truncate">{file ? file.name : "Choose a file..."}</span>
+                <Upload className="h-4 w-4 text-gold" />
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null;
+                  setFile(f);
+                  const err = validateFile(f);
+                  setErrors((prev) => ({ ...prev, file: err ?? "" }));
+                }}
+              />
+              {errors.file && (
+                <span className="mt-1.5 block text-xs text-red-300">{errors.file}</span>
+              )}
+            </div>
+
+            {submitError && <p className="text-sm text-red-300">{submitError}</p>}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground shadow-gold transition disabled:opacity-60"
+            >
+              {submitting ? "Submitting..." : "Submit Application"}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function ModalField({
+  label,
+  value,
+  onChange,
+  error,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  type?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-white/60">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full rounded-xl border bg-white/[0.04] px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition focus:border-royal focus:ring-2 focus:ring-royal/30 ${
+          error ? "border-red-400/60" : "border-white/10"
+        }`}
+      />
+      {error && <span className="mt-1.5 block text-xs text-red-300">{error}</span>}
+    </label>
   );
 }
