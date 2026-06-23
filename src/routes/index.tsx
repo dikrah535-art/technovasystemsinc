@@ -650,8 +650,17 @@ function Contact() {
   const [values, setValues] = useState({ name: "", email: "", company: "", message: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: async (payload: { full_name: string; email: string; message: string }) => {
+      const { error } = await supabase.from("contacts").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      qc.invalidateQueries({ queryKey: ["contacts"] });
+    },
+  });
 
   function validateField(field: keyof typeof values, val: string) {
     const partial = { ...values, [field]: val };
@@ -675,22 +684,19 @@ function Contact() {
       setErrors(errs);
       return;
     }
-    setSubmitting(true);
-    setSubmitError(null);
-    const { error } = await supabase.from("contacts").insert({
+    mutation.mutate({
       full_name: result.data.name,
       email: result.data.email,
       message: result.data.company
         ? `[Company: ${result.data.company}]\n\n${result.data.message}`
         : result.data.message,
     });
-    setSubmitting(false);
-    if (error) {
-      setSubmitError("Something went wrong sending your message. Please try again.");
-      return;
-    }
-    setSubmitted(true);
   }
+
+  const submitting = mutation.isPending;
+  const submitError = mutation.isError
+    ? "Something went wrong sending your message. Please try again."
+    : null;
 
   return (
     <section id="contact" className="relative overflow-hidden bg-navy-deep py-24 sm:py-32">
