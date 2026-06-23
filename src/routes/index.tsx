@@ -1098,10 +1098,45 @@ function ResumeModal({
   });
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: async (input: {
+      data: z.infer<typeof applicationSchema>;
+      file: File;
+    }) => {
+      const ext = input.file.name.includes(".")
+        ? input.file.name.split(".").pop()
+        : "bin";
+      const safeName = input.data.full_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      const path = `${Date.now()}-${safeName}-${crypto.randomUUID()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("resumes")
+        .upload(path, input.file, { contentType: input.file.type, upsert: false });
+      if (uploadErr) throw new Error("upload");
+      const { data: publicUrlData } = supabase.storage.from("resumes").getPublicUrl(path);
+      const { error: insertErr } = await supabase.from("job_applications").insert({
+        ...input.data,
+        resume_url: publicUrlData.publicUrl,
+      });
+      if (insertErr) throw new Error("insert");
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+      qc.invalidateQueries({ queryKey: ["job_applications"] });
+    },
+    onError: (err: Error) => {
+      setSubmitError(
+        err.message === "insert"
+          ? "Your resume uploaded, but we couldn't save your application. Please contact us."
+          : "We couldn't upload your resume. Please try again.",
+      );
+    },
+  });
+  const submitting = mutation.isPending;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -1130,33 +1165,7 @@ function ResumeModal({
     if (fileErr) newErrs.file = fileErr;
     setErrors(newErrs);
     if (Object.keys(newErrs).length > 0 || !parsed.success || !file) return;
-
-    setSubmitting(true);
-    const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-    const safeName = parsed.data.full_name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-    const path = `${Date.now()}-${safeName}-${crypto.randomUUID()}.${ext}`;
-
-    const { error: uploadErr } = await supabase.storage
-      .from("resumes")
-      .upload(path, file, { contentType: file.type, upsert: false });
-    if (uploadErr) {
-      setSubmitting(false);
-      setSubmitError("We couldn't upload your resume. Please try again.");
-      return;
-    }
-
-    const { data: publicUrlData } = supabase.storage.from("resumes").getPublicUrl(path);
-
-    const { error: insertErr } = await supabase.from("job_applications").insert({
-      ...parsed.data,
-      resume_url: publicUrlData.publicUrl,
-    });
-    setSubmitting(false);
-    if (insertErr) {
-      setSubmitError("Your resume uploaded, but we couldn't save your application. Please contact us.");
-      return;
-    }
-    setSubmitted(true);
+    mutation.mutate({ data: parsed.data, file });
   }
 
   return (
