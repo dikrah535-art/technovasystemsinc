@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { TechNovaLogo } from "@/components/TechNovaLogo";
 import { ParticleField } from "@/components/ParticleField";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -581,6 +582,8 @@ function Contact() {
   const [values, setValues] = useState({ name: "", email: "", company: "", message: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   function validateField(field: keyof typeof values, val: string) {
     const partial = { ...values, [field]: val };
@@ -593,7 +596,7 @@ function Contact() {
     }
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const result = contactSchema.safeParse(values);
     if (!result.success) {
@@ -602,6 +605,20 @@ function Contact() {
         errs[i.path[0] as keyof FieldErrors] = i.message;
       });
       setErrors(errs);
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError(null);
+    const { error } = await supabase.from("contacts").insert({
+      full_name: result.data.name,
+      email: result.data.email,
+      message: result.data.company
+        ? `[Company: ${result.data.company}]\n\n${result.data.message}`
+        : result.data.message,
+    });
+    setSubmitting(false);
+    if (error) {
+      setSubmitError("Something went wrong sending your message. Please try again.");
       return;
     }
     setSubmitted(true);
@@ -721,13 +738,17 @@ function Contact() {
                   />
                   <motion.button
                     type="submit"
+                    disabled={submitting}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground shadow-gold transition sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground shadow-gold transition disabled:opacity-60 sm:w-auto"
                   >
-                    Send message
+                    {submitting ? "Sending..." : "Send message"}
                     <ArrowRight className="h-4 w-4" />
                   </motion.button>
+                  {submitError && (
+                    <p className="text-sm text-red-300">{submitError}</p>
+                  )}
                 </motion.form>
               )}
             </AnimatePresence>
