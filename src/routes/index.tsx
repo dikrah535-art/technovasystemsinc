@@ -230,8 +230,10 @@ function Index() {
       <main>
         <Hero />
         <Attributes />
+        <CoreServices />
         <Solutions onOpen={setActiveService} />
         <About />
+        <Testimonials />
         <Careers onApply={(role) => setResumeOpen({ role })} />
         <Contact />
       </main>
