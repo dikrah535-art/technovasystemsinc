@@ -1,11 +1,11 @@
-import faviconAsset from "@/assets/technova-favicon.png.asset.json";
-
 export function TechNovaLogo({ className = "" }: { className?: string }) {
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <img
-        src={faviconAsset.url}
+        src="/technova-logo.png"
         alt="TechNova Systems"
+        // 'object-contain' ensures the image maintains its aspect ratio
+        // and doesn't get stretched or squashed.
         className="h-9 w-9 object-contain"
       />
       <div className="text-lg font-bold leading-none tracking-tight">
