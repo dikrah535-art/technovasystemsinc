@@ -59,13 +59,13 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const navLinks = [
-  { label: "Solutions", href: "#solutions" },
-  { label: "Services", href: "/services" }, // Change this from "#services"
-  { label: "Voices", href: "#testimonials" },
-  { label: "About", href: "#about" },
-  { label: "Careers", href: "#careers" },
-  { label: "Contact", href: "#contact" },
+const navigation = [
+  { label: "Home", href: "/" },
+  { label: "Services", href: "/services" },
+  { label: "For Employers", href: "/for-employers" },
+  { label: "For Job Seekers", href: "/for-job-seekers" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 const attributes = [
