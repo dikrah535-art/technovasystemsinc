@@ -900,26 +900,64 @@ type JobPosting = {
   description: string;
 };
 
-function Careers({ onApply }: { onApply: (role?: string) => void }) {
-  const [jobs, setJobs] = useState<JobPosting[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+function useJobPostingsQuery() {
+  const qc = useQueryClient();
 
   useEffect(() => {
-    let mounted = true;
-    supabase
-      .from("job_postings")
-      .select("id,title,department,location,employment_type,description")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (!mounted) return;
-        if (error) setErr("We couldn't load open roles right now.");
-        else setJobs(data ?? []);
-      });
+    const channel = supabase
+      .channel("job_postings_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "job_postings" },
+        () => qc.invalidateQueries({ queryKey: ["job_postings"] }),
+      )
+      .subscribe();
     return () => {
-      mounted = false;
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [qc]);
+
+  return useQuery<JobPosting[]>({
+    queryKey: ["job_postings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("job_postings")
+        .select("id,title,department,location,employment_type,description")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as JobPosting[];
+    },
+  });
+}
+
+function Careers({ onApply }: { onApply: (role?: string) => void }) {
+  const { data: jobs, isLoading, isError } = useJobPostingsQuery();
+  const [roleType, setRoleType] = useState<string>("All");
+  const [location, setLocation] = useState<string>("All");
+  const [skill, setSkill] = useState<string>("");
+
+  const roleTypes = useMemo(
+    () => ["All", ...Array.from(new Set((jobs ?? []).map((j) => j.employment_type)))],
+    [jobs],
+  );
+  const locations = useMemo(
+    () => ["All", ...Array.from(new Set((jobs ?? []).map((j) => j.location)))],
+    [jobs],
+  );
+
+  const filtered = useMemo(() => {
+    return (jobs ?? []).filter((j) => {
+      if (roleType !== "All" && j.employment_type !== roleType) return false;
+      if (location !== "All" && j.location !== location) return false;
+      if (skill.trim()) {
+        const q = skill.trim().toLowerCase();
+        const blob = `${j.title} ${j.description} ${j.department}`.toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [jobs, roleType, location, skill]);
 
   return (
     <section id="careers" className="relative bg-navy py-24 sm:py-32">
