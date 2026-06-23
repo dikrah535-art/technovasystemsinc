@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1371,11 +1372,19 @@ function Typewriter({ phrases }: { phrases: string[] }) {
 
 /* ---------- Core Services strip ---------- */
 function CoreServices() {
+  const rows: { title: string; body: string; icon: typeof Briefcase; badge?: "HOT" | "ACTIVE" }[] = [
+    { icon: Users, title: "IT Staffing", body: "Engineers, architects, and PMs deployed in days.", badge: "HOT" },
+    { icon: Cpu, title: "AI Consulting", body: "From strategy to production LLM systems.", badge: "ACTIVE" },
+    { icon: Cloud, title: "Cloud & DevOps", body: "AWS, GCP, Azure platforms built to scale." },
+    { icon: Lock, title: "Cybersecurity", body: "Zero-trust, SOC 2, and threat-ready engineering.", badge: "ACTIVE" },
+    { icon: Database, title: "Data & Analytics", body: "Lakehouses, ML pipelines, and decision systems." },
+  ];
   return (
     <section id="services" className="relative bg-navy-deep py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <div className="max-w-2xl">
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-2xl">
             <div className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
               Core Services
             </div>
@@ -1383,28 +1392,57 @@ function CoreServices() {
               Specialized talent across the modern stack.
             </h2>
             <p className="mt-4 text-lg text-white/70">
-              Six practice areas. Deep benches. Engineers who've shipped what your roadmap needs next.
+              Five practice areas. Deep benches. Engineers who've shipped what your roadmap needs next.
             </p>
+            </div>
+            <Link
+              to="/services"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white/80 transition hover:scale-[1.03] hover:text-white"
+            >
+              View all services <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </Reveal>
 
-        <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {coreServices.map((s, i) => (
-            <Reveal key={s.title} delay={i * 0.05}>
-              <motion.div
-                whileHover={{ y: -4 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="group h-full rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.01] p-6 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition hover:border-white/25 hover:shadow-glow"
-              >
-                <div className="grid h-12 w-12 place-items-center rounded-xl bg-royal/15 text-royal ring-1 ring-royal/30 transition group-hover:bg-gold/15 group-hover:text-gold group-hover:ring-gold/30">
-                  <s.icon className="h-6 w-6" />
-                </div>
-                <h3 className="mt-5 text-lg font-semibold text-white">{s.title}</h3>
-                <p className="mt-2 text-sm text-white/65">{s.body}</p>
-              </motion.div>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal delay={0.05}>
+          <Link
+            to="/services"
+            className="mt-14 block overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.05] to-white/[0.01] shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] transition hover:border-white/25 hover:shadow-glow"
+          >
+            <ul className="divide-y divide-white/5">
+              {rows.map((r) => (
+                <li
+                  key={r.title}
+                  className="group flex items-center gap-5 px-5 py-5 transition hover:bg-white/[0.03] sm:px-7"
+                >
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-royal/15 text-royal ring-1 ring-royal/30 transition group-hover:bg-gold/15 group-hover:text-gold group-hover:ring-gold/30">
+                    <r.icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-base font-semibold text-white sm:text-lg">{r.title}</h3>
+                      {r.badge === "HOT" && (
+                        <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold ring-1 ring-gold/40">
+                          Hot
+                        </span>
+                      )}
+                      {r.badge === "ACTIVE" && (
+                        <span className="rounded-full bg-emerald-400/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/40">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 truncate text-sm text-white/60">{r.body}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-white/40 transition group-hover:translate-x-0.5 group-hover:text-gold" />
+                </li>
+              ))}
+            </ul>
+            <div className="border-t border-white/10 bg-white/[0.02] px-5 py-4 text-center text-xs font-medium text-white/60 sm:px-7">
+              Average placement time: <span className="text-white/90">48–72 hours</span> for qualified candidates
+            </div>
+          </Link>
+        </Reveal>
       </div>
     </section>
   );
